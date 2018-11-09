@@ -11,9 +11,9 @@ from model import Layer
 
 class LayerTest(unittest.TestCase):
     def test_init(self):
-        layer0 = Layer(pd_unit_size=64, sst_unit_size=64)
-        layer1 = Layer(pd_unit_size=64, sst_unit_size=64)
-        layer2 = Layer(pd_unit_size=64, sst_unit_size=64)
+        layer0 = Layer(pd_unit_size=64, sst_unit_size=32)
+        layer1 = Layer(pd_unit_size=64, sst_unit_size=32)
+        layer2 = Layer(pd_unit_size=64, sst_unit_size=32)
         
         layer0.connect_to(layer1)
         layer1.connect_to(layer2)

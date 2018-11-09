@@ -44,6 +44,7 @@ class Layer(object):
     def process(self):
         # Apical, Basalの電位をFiring Rateから計算
         # Piramidal Apical
+        # (TopのLayerには無い)
         v_p_a = self.lower_layer.w_pp_bu.dot(activation(self.lower_layer.u_p))
         # (pd_unit_size)
         

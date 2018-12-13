@@ -18,11 +18,26 @@ class LayerTest(unittest.TestCase):
         
         layer0.connect_to(layer1)
         layer1.connect_to(layer2)
-
+        
         dt = 0.01
-        layer1.update(dt)
+
+        layer0.update_potential(dt)
+        layer1.update_potential(dt)
+        layer2.update_potential(dt)
+        
+        layer0.update_weight(dt)
+        layer1.update_weight(dt)
+        layer2.update_weight(dt)
+
+    def test_calc_d_weight(self):
+        layer = Layer(pd_unit_size=10, sst_unit_size=10)
+        
+        eta = 1.0
+        post = np.zeros([10])
+        pre = np.zeros([20])
+        d_w = layer.calc_d_weight(eta, post, pre)
+        self.assertEqual(d_w.shape, (10, 20))
         
         
 if __name__ == '__main__':
     unittest.main()
-    

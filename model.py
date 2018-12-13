@@ -8,21 +8,33 @@ import numpy as np
 def activation(x):
     return 1.0 / (1.0 + np.exp(-x))
 
-# TODO: サイズの指定
 def noise(size):
     return np.random.normal(size=size)
+
+
+class LowPassFilter(object):
+    def __init__(self, dt, time_constant):
+        self.last_value = None
+        # alpha = dt / (RC + dt)
+        self.alpha = dt / (time_constant + dt)
+
+    def process(self, value):
+        if self.last_value is None:
+            self.last_value = value * self.alpha
+        else:
+            self.last_value = self.last_value * (1.0-self.alpha) + value * self.alpha
+        return self.last_value
 
 # 定数
 g_lk = 0.1
 g_a = 0.8
 g_b = 1.0
 g_d = 1.0
+g_som = 0.8
 noise_delta = 0.1
 
 e_exc = 1.0   # Excitatory reversal potential
 e_inh = -1.0  # Inhibitory reversal potential
-
-g_som = 0.8
 
 # TODO: etaは層によって変える必要あり
 eta_pp_bu = 0.0011875
@@ -49,8 +61,9 @@ class Layer(object):
             self.u_p = np.zeros([self.pd_unit_size])
         else:
             # 最下層は入力としての発火率を入れる
+            # TODO: ここは発火率ではなくて、電位で指定かもしれない.
             self.exteral_r = np.zeros([self.pd_unit_size])
-        
+
     def connect_to(self, upper_layer):
         self.upper_layer = upper_layer
         upper_layer.lower_layer = self
@@ -66,7 +79,11 @@ class Layer(object):
                                                        self.pd_unit_size))
             # SST -> PD
             self.w_pi = np.random.uniform(-1, 1, size=(self.pd_unit_size,
-                                                       self.sst_unit_size))            
+                                                       self.sst_unit_size))
+
+            # Low pass filter
+            self.filter_d_w_ip = LowPassFilter(0.1, 30)
+            self.filter_d_w_pi = LowPassFilter(0.1, 30)
             
         # K -> K+1
         self.w_pp_bu = np.random.uniform(-1, 1, size=(upper_layer.pd_unit_size,
@@ -77,6 +94,7 @@ class Layer(object):
 
     def get_p_activation(self):
         if self.layer_type == LAYER_TYPE_BOTTOM:
+            # TODO: ここは発火率ではなくて、電位で指定かもしれない.
             return self.exteral_r
         else:
             return activation(self.u_p)
@@ -180,10 +198,18 @@ class Layer(object):
             r_i = activation(self.u_i)
             v_i_b_hat = self.v_i_b * (g_d/g_lk + g_d)
             d_w_ip = self.calc_d_weight(eta_ip, r_i - v_i_b_hat, r_p)
+
+            # Low pass filter適用
+            d_w_ip = self.filter_d_w_ip.process(d_w_ip)
+            
             self.w_ip += d_w_ip * dt
         
             # I -> P結線のweight更新
             # (Apicalの電位を0に近づける)
             v_rest = 0.0
             d_w_pi = self.calc_d_weight(eta_pi, v_rest - self.v_p_a, r_i)
+
+            # Low pass filter適用
+            d_w_pi = self.filter_d_w_pi.process(d_w_pi)
+            
             self.w_pi += d_w_pi * dt

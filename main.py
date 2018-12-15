@@ -39,10 +39,8 @@ def main():
         # 100ms = 1000 step間値を固定する.
         values = np.random.rand(30)
         for j in range(1000):
-            print(values)
-            
-            values = lp_filter.process(values)
-            network.set_sensor_input(values)
+            filtered_values = lp_filter.process(values)
+            network.set_sensor_input(filtered_values)
             network.update(dt)
             
             

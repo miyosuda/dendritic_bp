@@ -11,7 +11,6 @@ from model import Layer, LAYER_TYPE_BOTTOM, LAYER_TYPE_HIDDEN, LAYER_TYPE_TOP, L
 
 class LayerTest(unittest.TestCase):
     def test_update(self):
-        # sst_unit_sizeは上の階層のpd_unitサイズに等しくなる必要あり.
         layer0 = Layer(pd_unit_size=30, layer_type=LAYER_TYPE_BOTTOM)
         layer1 = Layer(pd_unit_size=20, layer_type=LAYER_TYPE_HIDDEN)
         layer2 = Layer(pd_unit_size=10, layer_type=LAYER_TYPE_TOP)

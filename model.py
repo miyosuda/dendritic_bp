@@ -62,7 +62,10 @@ class Layer(object):
         else:
             # 最下層は入力としての発火率を入れる
             # TODO: ここは発火率ではなくて、電位で指定かもしれない.
-            self.exteral_r = np.zeros([self.pd_unit_size])
+            self.external_r = np.zeros([self.pd_unit_size])
+
+    def set_sensor_input(self, values):
+        self.external_r = values
 
     def connect_to(self, upper_layer):
         self.upper_layer = upper_layer
@@ -95,7 +98,7 @@ class Layer(object):
     def get_p_activation(self):
         if self.layer_type == LAYER_TYPE_BOTTOM:
             # TODO: ここは発火率ではなくて、電位で指定かもしれない.
-            return self.exteral_r
+            return self.external_r
         else:
             return activation(self.u_p)
         

@@ -187,6 +187,7 @@ class Layer(object):
         r_p = self.get_p_activation()
 
         """
+        # Self Predicting state学習時は固定で学習しない
         if self.layer_type == LAYER_TYPE_HIDDEN or self.layer_type == LAYER_TYPE_BOTTOM:
             # Bottom Up結線のweight更新
             upper_r_p = activation(self.upper_layer.u_p)

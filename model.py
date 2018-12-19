@@ -4,6 +4,8 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+import os
+
 
 def activation(x):
     return 1.0 / (1.0 + np.exp(-x))
@@ -183,7 +185,8 @@ class Layer(object):
             return
         
         r_p = self.get_p_activation()
-        
+
+        """
         if self.layer_type == LAYER_TYPE_HIDDEN or self.layer_type == LAYER_TYPE_BOTTOM:
             # Bottom Up結線のweight更新
             upper_r_p = activation(self.upper_layer.u_p)
@@ -195,6 +198,7 @@ class Layer(object):
             v_p_td_hat = self.w_pp_td.dot(upper_r_p)
             d_w_pp_td = self.calc_d_weight(eta_pp_td, r_p - v_p_td_hat, upper_r_p)
             self.w_pp_td += d_w_pp_td
+        """
         
         # P -> I結線のweight更新
         if self.layer_type == LAYER_TYPE_HIDDEN:
@@ -216,3 +220,33 @@ class Layer(object):
             d_w_pi = self.filter_d_w_pi.process(d_w_pi)
             
             self.w_pi += d_w_pi * dt
+
+    def save(self, file_path):
+        if self.layer_type == LAYER_TYPE_HIDDEN:
+            np.savez_compressed(file_path,
+                                w_pp_bu=self.w_pp_bu,
+                                w_pp_td=self.w_pp_td,
+                                w_ip=self.w_ip,
+                                w_pi=self.w_pi)
+        elif self.layer_type == LAYER_TYPE_BOTTOM:
+            np.savez_compressed(file_path,
+                                w_pp_bu=self.w_pp_bu,
+                                w_pp_td=self.w_pp_td)
+
+    def load(self, file_path):
+        real_file_path = "{}.npz".format(file_path)
+        if not os.path.exists(real_file_path):
+            print("saved file not found")
+            return
+        
+        data = np.load(real_file_path)
+        if self.layer_type == LAYER_TYPE_HIDDEN:
+            self.w_pp_bu = data["w_pp_bu"]
+            self.w_pp_td = data["w_pp_td"]
+            self.w_ip    = data["w_ip"]
+            self.w_pi    = data["w_pi"]
+        elif self.layer_type == LAYER_TYPE_BOTTOM:
+            self.w_pp_bu = data["w_pp_bu"]
+            self.w_pp_td = data["w_pp_td"]
+
+        print("weight loaded: {}".format(real_file_path))

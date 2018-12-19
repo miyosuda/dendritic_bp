@@ -4,6 +4,7 @@ from __future__ import division
 from __future__ import print_function
 
 import numpy as np
+import os
 
 from model import Layer, LAYER_TYPE_BOTTOM, LAYER_TYPE_HIDDEN, LAYER_TYPE_TOP, LowPassFilter
 
@@ -29,9 +30,29 @@ class Network(object):
     def set_sensor_input(self, values):
         self.layer0.set_sensor_input(values)
 
+    # TODO: 仮処理
+    def save(self, dir_name):
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+        file_path0 = os.path.join(dir_name, "layer0")
+        self.layer0.save(file_path0)
+        file_path1 = os.path.join(dir_name, "layer1")
+        self.layer1.save(file_path1)
+
+    def load(self, dir_name):
+        file_path0 = os.path.join(dir_name, "layer0")
+        self.layer0.load(file_path0)
+        file_path1 = os.path.join(dir_name, "layer1")
+        self.layer1.load(file_path1)
+
 
 def main():
+    np.random.seed(seed=0)
+    save_dir = "saved"
+    
     network = Network()
+    #network.load(save_dir)
+
     dt = 0.1
     lp_filter = LowPassFilter(dt, 3)
     
@@ -42,7 +63,11 @@ def main():
             filtered_values = lp_filter.process(values)
             network.set_sensor_input(filtered_values)
             network.update(dt)
-            
-            
+
+        #print(network.layer1.v_p_a[0])
+        print(np.mean(network.layer1.v_p_a))
+
+    #network.save(save_dir)
+        
 if __name__ == '__main__':
     main()

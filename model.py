@@ -27,36 +27,26 @@ class LowPassFilter(object):
             self.last_value = self.last_value * (1.0-self.alpha) + value * self.alpha
         return self.last_value
 
-# 定数
-g_lk = 0.1
-g_a = 0.8
-g_b = 1.0
-g_d = 1.0
-g_som = 0.8
-noise_delta = 0.1
-
-e_exc = 1.0   # Excitatory reversal potential
-e_inh = -1.0  # Inhibitory reversal potential
-
-# TODO: etaは層によって変える必要あり
-eta_pp_bu = 0.0011875
-eta_pp_td = 0.0011875
-eta_pi = 0.0002375
-eta_ip = 0.0005
-
 LAYER_TYPE_BOTTOM = 0
 LAYER_TYPE_HIDDEN = 1
 LAYER_TYPE_TOP    = 2
 
-
 class Layer(object):
-    def __init__(self, pd_unit_size, layer_type):
+    def __init__(self, pd_unit_size, layer_type, option):
         self.pd_unit_size = pd_unit_size # 錐体細胞のユニット数
 
         self.layer_type = layer_type
         
         self.upper_layer = None
         self.lower_layer = None
+
+        self.option = option
+
+        # 各Weightを更新するかどうかフラグ
+        self.train_w_pp_bu = True
+        self.train_w_pp_td = True
+        self.train_w_ip = True
+        self.train_w_pi = True
 
         if self.layer_type is not LAYER_TYPE_BOTTOM:
             # Pyramidal neuron Soma potentials
@@ -66,8 +56,14 @@ class Layer(object):
             # TODO: ここは発火率ではなくて、電位で指定かもしれない.
             self.external_r = np.zeros([self.pd_unit_size])
 
+        if self.layer_type is LAYER_TYPE_TOP:
+            self.u_target = None
+
     def set_sensor_input(self, values):
         self.external_r = values
+
+    def set_target_potential(self, u_target):
+        self.u_target = u_target
 
     def connect_to(self, upper_layer):
         self.upper_layer = upper_layer
@@ -105,19 +101,35 @@ class Layer(object):
             return activation(self.u_p)
         
     def calc_i_p(self):
+        if self.u_target is None:
+            # 外部からの入力が無い場合はカレントは0を返す.
+            return 0.0
+        
         # トップLayerにおける教師信号によるcurrentを算出
-        g_p_exc = 1.0 # TODO: これは教師信号により変わる変数
-        g_p_inh = 1.0 # TODO: これは教師信号により変わる変数
-        i_p = g_p_exc * (e_exc - self.u_p) + g_p_inh * (e_inh - self.u_p)
+        g_p_exc =  self.option.g_som * \
+                   (self.u_target - self.option.e_inh) / \
+                   (self.option.e_exc - self.option.e_inh)
+        g_p_inh = -self.option.g_som * \
+                  (self.u_target - self.option.e_exc) / \
+                  (self.option.e_exc - self.option.e_inh)
+
+        # このcurrentにより、u_pは、u_targetに近づいていく
+        i_p = g_p_exc * (self.option.e_exc - self.u_p) + \
+              g_p_inh * (self.option.e_inh - self.u_p)
         return i_p
 
     def calc_i_i(self):
         # トップダウンによるTeaching currentの算出
-        g_i_exc =  g_som * (self.upper_layer.u_p - e_inh) / (e_exc - e_inh)
-        g_i_inh = -g_som * (self.upper_layer.u_p - e_exc) / (e_exc - e_inh)
+        g_i_exc =  self.option.g_som * \
+                   (self.upper_layer.u_p - self.option.e_inh) / \
+                   (self.option.e_exc - self.option.e_inh)
+        g_i_inh = -self.option.g_som * \
+                  (self.upper_layer.u_p - self.option.e_exc) / \
+                  (self.option.e_exc - self.option.e_inh)
         
         # このcurrentにより、SST interneuronは、上位のinter neuronの電位に近づいていく
-        i_i = g_i_exc * (e_exc - self.u_i) + g_i_inh * (e_inh - self.u_i)
+        i_i = g_i_exc * (self.option.e_exc - self.u_i) + \
+              g_i_inh * (self.option.e_inh - self.u_i)
         return i_i
 
     def update_potential(self, dt):
@@ -144,32 +156,30 @@ class Layer(object):
         # 錐体細胞の電位の更新式
         if self.layer_type == LAYER_TYPE_TOP:
             # 教師信号によるcurrent
-            # TODO:
-            #i_p = self.calc_i_p()
-            i_p = 0.0
+            i_p = self.calc_i_p()
             
             # 最終層にはApical無いがi_pがある
-            d_u_p = -g_lk * self.u_p + \
-                    g_b * (self.v_p_b - self.u_p) + \
+            d_u_p = -self.option.g_lk * self.u_p + \
+                    self.option.g_b * (self.v_p_b - self.u_p) + \
                     i_p + \
-                    noise_delta * noise(len(self.u_p))
+                    self.option.noise_delta * noise(len(self.u_p))
             self.u_p += d_u_p * dt
         elif self.layer_type == LAYER_TYPE_HIDDEN:
             # 中間層にはApicalがあるがi_pが無い
-            d_u_p = -g_lk * self.u_p + \
-                    g_b * (self.v_p_b - self.u_p) + \
-                    g_a * (self.v_p_a - self.u_p) + \
-                    noise_delta * noise(len(self.u_p))
+            d_u_p = -self.option.g_lk * self.u_p + \
+                    self.option.g_b * (self.v_p_b - self.u_p) + \
+                    self.option.g_a * (self.v_p_a - self.u_p) + \
+                    self.option.noise_delta * noise(len(self.u_p))
             self.u_p += d_u_p * dt
 
         # SSTインターニューロンの電位の更新式
         if self.layer_type == LAYER_TYPE_HIDDEN:
             # upperからSSTにながれるcurrent
             i_i = self.calc_i_i()
-            d_u_i = -g_lk * self.u_i + \
-                    g_d * (self.v_i_b - self.u_i) + \
+            d_u_i = -self.option.g_lk * self.u_i + \
+                    self.option.g_d * (self.v_i_b - self.u_i) + \
                     i_i + \
-                    noise_delta * noise(len(self.u_i))
+                    self.option.noise_delta * noise(len(self.u_i))
             self.u_i += d_u_i * dt
 
     def calc_d_weight(self, eta, post, pre):
@@ -186,41 +196,46 @@ class Layer(object):
         
         r_p = self.get_p_activation()
 
-        """
         # Self Predicting state学習時は固定で学習しない
         if self.layer_type == LAYER_TYPE_HIDDEN or self.layer_type == LAYER_TYPE_BOTTOM:
-            # Bottom Up結線のweight更新
-            upper_r_p = activation(self.upper_layer.u_p)
-            upper_v_p_b_hat = self.upper_layer.v_p_b * (g_b / (g_lk + g_b + g_a))
-            d_w_pp_bu = self.calc_d_weight(eta_pp_bu, upper_r_p - upper_v_p_b_hat, r_p)
-            self.w_pp_bu += d_w_pp_bu * dt
+            if self.train_w_pp_bu:
+                # Bottom Up結線のweight更新
+                upper_r_p = activation(self.upper_layer.u_p)
+                upper_v_p_b_hat = self.upper_layer.v_p_b * \
+                                  (self.option.g_b / \
+                                   (self.option.g_lk + self.option.g_b + self.option.g_a))
+                d_w_pp_bu = self.calc_d_weight(self.option.eta_pp_bu,
+                                               upper_r_p - upper_v_p_b_hat, r_p)
+                self.w_pp_bu += d_w_pp_bu * dt
         
-            # TopDownのPlasticyを使う場合
-            v_p_td_hat = self.w_pp_td.dot(upper_r_p)
-            d_w_pp_td = self.calc_d_weight(eta_pp_td, r_p - v_p_td_hat, upper_r_p)
-            self.w_pp_td += d_w_pp_td
-        """
+            if self.train_w_pp_td:
+                # TopDownのPlasticyを使う場合
+                v_p_td_hat = self.w_pp_td.dot(upper_r_p)
+                d_w_pp_td = self.calc_d_weight(self.option.eta_pp_td,
+                                               r_p - v_p_td_hat,
+                                               upper_r_p)
+                self.w_pp_td += d_w_pp_td
         
-        # P -> I結線のweight更新
         if self.layer_type == LAYER_TYPE_HIDDEN:
-            r_i = activation(self.u_i)
-            v_i_b_hat = self.v_i_b * (g_d/g_lk + g_d)
-            d_w_ip = self.calc_d_weight(eta_ip, r_i - v_i_b_hat, r_p)
+            if self.train_w_ip:
+                # P -> I結線のweight更新
+                r_i = activation(self.u_i)
+                v_i_b_hat = self.v_i_b * (self.option.g_d/self.option.g_lk + self.option.g_d)
+                d_w_ip = self.calc_d_weight(self.option.eta_ip, r_i - v_i_b_hat, r_p)
 
-            # Low pass filter適用
-            d_w_ip = self.filter_d_w_ip.process(d_w_ip)
-            
-            self.w_ip += d_w_ip * dt
-        
-            # I -> P結線のweight更新
-            # (Apicalの電位を0に近づける)
-            v_rest = 0.0
-            d_w_pi = self.calc_d_weight(eta_pi, v_rest - self.v_p_a, r_i)
+                # Low pass filter適用
+                d_w_ip = self.filter_d_w_ip.process(d_w_ip)
+                self.w_ip += d_w_ip * dt
 
-            # Low pass filter適用
-            d_w_pi = self.filter_d_w_pi.process(d_w_pi)
-            
-            self.w_pi += d_w_pi * dt
+            if self.train_w_pi:
+                # I -> P結線のweight更新
+                # (Apicalの電位を0に近づける)
+                v_rest = 0.0
+                d_w_pi = self.calc_d_weight(self.option.eta_pi, v_rest - self.v_p_a, r_i)
+
+                # Low pass filter適用
+                d_w_pi = self.filter_d_w_pi.process(d_w_pi)
+                self.w_pi += d_w_pi * dt
 
     def save(self, file_path):
         if self.layer_type == LAYER_TYPE_HIDDEN:

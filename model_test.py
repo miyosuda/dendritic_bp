@@ -7,13 +7,15 @@ import numpy as np
 import unittest
 
 from model import Layer, LAYER_TYPE_BOTTOM, LAYER_TYPE_HIDDEN, LAYER_TYPE_TOP, LowPassFilter
-
+from option import Option
 
 class LayerTest(unittest.TestCase):
     def test_update(self):
-        layer0 = Layer(pd_unit_size=30, layer_type=LAYER_TYPE_BOTTOM)
-        layer1 = Layer(pd_unit_size=20, layer_type=LAYER_TYPE_HIDDEN)
-        layer2 = Layer(pd_unit_size=10, layer_type=LAYER_TYPE_TOP)
+        option = Option()
+        
+        layer0 = Layer(pd_unit_size=30, layer_type=LAYER_TYPE_BOTTOM, option=option)
+        layer1 = Layer(pd_unit_size=20, layer_type=LAYER_TYPE_HIDDEN, option=option)
+        layer2 = Layer(pd_unit_size=10, layer_type=LAYER_TYPE_TOP, option=option)
         
         layer0.connect_to(layer1)
         layer1.connect_to(layer2)
@@ -30,7 +32,8 @@ class LayerTest(unittest.TestCase):
             layer2.update_weight(dt)
         
     def test_calc_d_weight(self):
-        layer = Layer(pd_unit_size=10, layer_type=LAYER_TYPE_HIDDEN)
+        option = Option()
+        layer = Layer(pd_unit_size=10, layer_type=LAYER_TYPE_HIDDEN, option=option)
         
         eta = 1.0
         post = np.zeros([10])

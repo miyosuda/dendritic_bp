@@ -18,5 +18,31 @@ class Option(object):
 
         self.eta_pp_bu = 0.0011875
         self.eta_pp_td = 0.0011875
-        self.eta_pi = 0.0002375
-        self.eta_ip = 0.0005
+        self.eta_pi    = 0.0005
+        self.eta_ip    = 0.0002375
+
+    @staticmethod
+    def get_self_prediction_option(layer_index):
+        option = Option()
+
+        option.eta_pp_bu = 0.0011875 # 不使用
+        option.eta_pp_td = 0.0011875 # 不使用
+        option.eta_pi    = 0.0005
+        option.eta_ip    = 0.0002375
+        return option
+
+    @staticmethod
+    def get_target_prediction_option(layer_index):
+        option = Option()
+        
+        if layer_index == 0:
+            option.eta_pp_bu = 0.0011875
+            option.eta_pp_td = 0.0011875 # 不使用
+            option.eta_pi    = 0.0005
+            option.eta_ip    = 0.0002375
+        elif layer_index == 1:
+            option.eta_pp_bu = 0.0005
+            option.eta_pp_td = 0.0011875 # 不使用
+            option.eta_pi    = 0.0005
+            option.eta_ip    = 0.0011875 # OK
+        return option

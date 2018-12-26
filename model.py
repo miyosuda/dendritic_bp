@@ -8,7 +8,12 @@ import os
 
 
 def activation(x):
+    """ Sigmoid activation function. """
     return 1.0 / (1.0 + np.exp(-x))
+
+def inv_activation(y):
+    """ Inverse of sigmoid activation function. """
+    return np.log(y) - np.log(1-y)
 
 def noise(size):
     return np.random.normal(size=size)
@@ -40,7 +45,7 @@ class Layer(object):
         self.upper_layer = None
         self.lower_layer = None
 
-        self.option = option
+        self.set_option(option)
 
         # 各Weightを更新するかどうかフラグ
         self.train_w_pp_bu = True
@@ -53,17 +58,30 @@ class Layer(object):
             self.u_p = np.zeros([self.pd_unit_size])
         else:
             # 最下層は入力としての発火率を入れる
-            # TODO: ここは発火率ではなくて、電位で指定かもしれない.
             self.external_r = np.zeros([self.pd_unit_size])
 
         if self.layer_type is LAYER_TYPE_TOP:
-            self.u_target = None
+            self.clear_target()
 
-    def set_sensor_input(self, values):
+    def set_option(self, option):
+        self.option = option
+
+    def set_input_firing_rate(self, values):
+        """ Input値の発火率を指定 """
         self.external_r = values
 
     def set_target_potential(self, u_target):
+        """ ターゲットの電位を指定 """
         self.u_target = u_target
+
+    def set_target_firing_rate(self, r_target):
+        """ ターゲットの発火率を指定 """
+        # ターゲットの発火率からターゲットの電位を逆算して求める
+        self.u_target = inv_activation(r_target)
+
+    def clear_target(self):
+        """ ターゲット指定をクリアする. """
+        self.u_target = None
 
     def connect_to(self, upper_layer):
         self.upper_layer = upper_layer
@@ -94,10 +112,12 @@ class Layer(object):
                                                       upper_layer.pd_unit_size))
 
     def get_p_activation(self):
+        # Pyramidal CellのSomaの発火率を得る.
         if self.layer_type == LAYER_TYPE_BOTTOM:
-            # TODO: ここは発火率ではなくて、電位で指定かもしれない.
+            # 外部からセンサ入力を指定している場合
             return self.external_r
         else:
+            # 通常の場合
             return activation(self.u_p)
         
     def calc_i_p(self):

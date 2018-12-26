@@ -24,37 +24,116 @@ class Network(object):
         self.layers[0].connect_to(self.layers[1])
         self.layers[1].connect_to(self.layers[2])
 
+        self.set_self_prediction_mode()
+
+    def set_self_prediction_mode(self):
         # Pyramidalのweightは更新しない
         for layer in self.layers:
             layer.train_w_pp_bu = False
             layer.train_w_pp_td = False
+            layer.train_w_ip = True
+            layer.train_w_pi = True
+
+        for i,layer in enumerate(self.layers):
+            option = Option.get_self_prediction_option(i)
+            layer.set_option(option)
+
+    def set_target_prediction_mode(self):
+        # Pyramidalのweightを更新する
+        for layer in self.layers:
+            layer.train_w_pp_bu = True
+            layer.train_w_pp_td = False
+            layer.train_w_ip = True
+            layer.train_w_pi = True
+
+        for i,layer in enumerate(self.layers):
+            option = Option.get_target_prediction_option(i)
+            layer.set_option(option)
 
     def update(self, dt):
-        for layer in self.layers:        
+        for layer in self.layers:
             layer.update_potential(dt)
 
         for layer in self.layers:
             layer.update_weight(dt)
 
-    def set_sensor_input(self, values):
-        self.layers[0].set_sensor_input(values)
+    def set_input_firing_rate(self, values):
+        self.layers[0].set_input_firing_rate(values)
 
-    # TODO: 仮処理
+    def set_target_firing_rate(self, values):
+        self.layers[2].set_target_firing_rate(values)
+
+    def clear_target(self):
+        self.layers[2].clear_target()
+
     def save(self, dir_name):
         if not os.path.exists(dir_name):
             os.makedirs(dir_name)
-        file_path0 = os.path.join(dir_name, "layer0")
-        self.layers[0].save(file_path0)
-        file_path1 = os.path.join(dir_name, "layer1")
-        self.layers[1].save(file_path1)
+
+        for i in range(2):
+            # Top層はSaveするものが無いので対象外
+            file_path = os.path.join(dir_name, "layer{}".format(i))
+            self.layers[i].save(file_path)
+
+        print("saved: {}".format(dir_name))
 
     def load(self, dir_name):
-        file_path0 = os.path.join(dir_name, "layer0")
-        self.layers[0].load(file_path0)
-        file_path1 = os.path.join(dir_name, "layer1")
-        self.layers[1].load(file_path1)
+        for i in range(2):
+            # Top層はLoadするものが無いので対象外
+            file_path = os.path.join(dir_name, "layer{}".format(i))
+            self.layers[i].load(file_path)
+
+        print("loaded: {}".format(dir_name))
 
 
+def train_self_prediction(network, iteration_size=100):
+    network.set_self_prediction_mode()
+    dt = 0.1
+    lp_filter = LowPassFilter(dt, 3)
+
+    for i in range(iteration_size):
+        # 100ms = 1000 step間値を固定する.
+        values = np.random.rand(30)
+        for j in range(1000):
+            filtered_values = lp_filter.process(values)
+            network.set_input_firing_rate(filtered_values)
+            network.update(dt)
+        print(np.mean(network.layers[1].v_p_a))
+
+
+def train_target_prediction(network):
+    network.set_target_prediction_mode()
+    
+    dt = 0.1
+    lp_filter = LowPassFilter(dt, 3)
+
+    target_values = np.random.rand(10)
+    values = np.random.rand(30)
+
+    for i in range(100):
+        for j in range(1000):
+            filtered_values = lp_filter.process(values)
+            network.set_target_firing_rate(target_values)
+            network.set_input_firing_rate(filtered_values)
+            network.update(dt)
+            
+        print(np.mean(network.layers[1].v_p_a))
+        print("target_r={}".format(target_values))
+        print("output_r={}".format(network.layers[2].get_p_activation()))
+
+        print("target_u={}".format(network.layers[2].u_target))
+        print("output_u={}".format(network.layers[2].u_p))
+
+    network.clear_target()
+
+    for i in range(100):
+        for j in range(1000):
+            filtered_values = lp_filter.process(values)
+            network.set_input_firing_rate(filtered_values)
+            network.update(dt)
+        print("target_r={}".format(target_values))
+        print("output_r={}".format(network.layers[2].get_p_activation()))
+        
 def main(args):
     np.random.seed(seed=0)
     save_dir = "saved"
@@ -63,18 +142,8 @@ def main(args):
     if args.loading:
         network.load(save_dir)
 
-    dt = 0.1
-    lp_filter = LowPassFilter(dt, 3)
-    
-    for i in range(100):
-        # 100ms = 1000 step間値を固定する.
-        values = np.random.rand(30)
-        for j in range(1000):
-            filtered_values = lp_filter.process(values)
-            network.set_sensor_input(filtered_values)
-            network.update(dt)
-
-        print(np.mean(network.layers[1].v_p_a))
+    #train_self_prediction(network)        
+    train_target_prediction(network)
 
     if args.saving:
         network.save(save_dir)
@@ -83,7 +152,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--loading", type=strtobool, default="true")
-    parser.add_argument("--saving", type=strtobool, default="true")
+    parser.add_argument("--saving", type=strtobool, default="false")
     
     args = parser.parse_args()
 

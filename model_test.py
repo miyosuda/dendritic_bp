@@ -6,7 +6,7 @@ from __future__ import print_function
 import numpy as np
 import unittest
 
-from model import Layer, LAYER_TYPE_BOTTOM, LAYER_TYPE_HIDDEN, LAYER_TYPE_TOP, LowPassFilter
+from model import Layer, LAYER_TYPE_BOTTOM, LAYER_TYPE_HIDDEN, LAYER_TYPE_TOP, LowPassFilter, activation, inv_activation
 from option import Option
 
 class LayerTest(unittest.TestCase):
@@ -50,6 +50,18 @@ class LayerTest(unittest.TestCase):
 
         value1 = lowpass_filter.process(value)
         self.assertEqual(value1.shape, (10,))
+
+    def test_activation(self):
+        value = -10.0
+        value_out = inv_activation(activation(value))
+
+        value = 0.0
+        value_out = inv_activation(activation(value))        
+        self.assertAlmostEqual(value, value_out)
+
+        value = 10.0
+        value_out = inv_activation(activation(value))
+        self.assertAlmostEqual(value, value_out)   
 
 
 if __name__ == '__main__':

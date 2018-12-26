@@ -117,7 +117,7 @@ def train_target_prediction(network):
             network.set_input_firing_rate(filtered_values)
             network.update(dt)
             
-        #print(np.mean(network.layers[1].v_p_a))
+        print("error={}".format(np.mean(network.layers[1].v_p_a)))
         #print("target_r={}".format(target_values))
         #print("output_r={}".format(network.layers[2].get_p_activation()))
 

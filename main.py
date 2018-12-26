@@ -42,7 +42,7 @@ class Network(object):
         # Pyramidalのweightを更新する
         for layer in self.layers:
             layer.train_w_pp_bu = True
-            layer.train_w_pp_td = False
+            layer.train_w_pp_td = False # TopDownのWeightは固定
             layer.train_w_ip = True
             layer.train_w_pi = True
 
@@ -117,13 +117,14 @@ def train_target_prediction(network):
             network.set_input_firing_rate(filtered_values)
             network.update(dt)
             
-        print(np.mean(network.layers[1].v_p_a))
-        print("target_r={}".format(target_values))
-        print("output_r={}".format(network.layers[2].get_p_activation()))
+        #print(np.mean(network.layers[1].v_p_a))
+        #print("target_r={}".format(target_values))
+        #print("output_r={}".format(network.layers[2].get_p_activation()))
 
         print("target_u={}".format(network.layers[2].u_target))
         print("output_u={}".format(network.layers[2].u_p))
 
+    """
     network.clear_target()
 
     for i in range(100):
@@ -133,6 +134,7 @@ def train_target_prediction(network):
             network.update(dt)
         print("target_r={}".format(target_values))
         print("output_r={}".format(network.layers[2].get_p_activation()))
+    """
         
 def main(args):
     np.random.seed(seed=0)
@@ -142,7 +144,7 @@ def main(args):
     if args.loading:
         network.load(save_dir)
 
-    #train_self_prediction(network)        
+    #train_self_prediction(network)
     train_target_prediction(network)
 
     if args.saving:

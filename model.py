@@ -183,6 +183,8 @@ class Layer(object):
                     self.option.g_b * (self.v_p_b - self.u_p) + \
                     i_p + \
                     self.option.noise_delta * noise(len(self.u_p))
+            # TODO: ここでi_pとノイズ以外の項により、u_pがu_targetに一致していかない原因を
+            # 探っている.
             self.u_p += d_u_p * dt
         elif self.layer_type == LAYER_TYPE_HIDDEN:
             # 中間層にはApicalがあるがi_pが無い
@@ -224,16 +226,18 @@ class Layer(object):
                 upper_v_p_b_hat = self.upper_layer.v_p_b * \
                                   (self.option.g_b / \
                                    (self.option.g_lk + self.option.g_b + self.option.g_a))
+                upper_r_p_b = activation(upper_v_p_b_hat)
                 d_w_pp_bu = self.calc_d_weight(self.option.eta_pp_bu,
-                                               upper_r_p - upper_v_p_b_hat, r_p)
+                                               upper_r_p - upper_r_p_b, r_p)
                 self.w_pp_bu += d_w_pp_bu * dt
         
             if self.train_w_pp_td:
                 # TopDownのPlasticyを使う場合
                 v_p_td_hat = self.w_pp_td.dot(upper_r_p)
+                r_p_td = activation(v_p_td_hat)
                 d_w_pp_td = self.calc_d_weight(self.option.eta_pp_td,
-                                               r_p - v_p_td_hat,
-                                               upper_r_p)
+                                               r_p - r_p_td, upper_r_p)
+                                               
                 self.w_pp_td += d_w_pp_td
         
         if self.layer_type == LAYER_TYPE_HIDDEN:
@@ -241,7 +245,8 @@ class Layer(object):
                 # P -> I結線のweight更新
                 r_i = activation(self.u_i)
                 v_i_b_hat = self.v_i_b * (self.option.g_d/self.option.g_lk + self.option.g_d)
-                d_w_ip = self.calc_d_weight(self.option.eta_ip, r_i - v_i_b_hat, r_p)
+                r_i_b = activation(v_i_b_hat)
+                d_w_ip = self.calc_d_weight(self.option.eta_ip, r_i - r_i_b, r_p)
 
                 # Low pass filter適用
                 d_w_ip = self.filter_d_w_ip.process(d_w_ip)

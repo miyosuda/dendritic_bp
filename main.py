@@ -110,7 +110,9 @@ def train_target_prediction(network):
     target_values = np.random.rand(10)
     values = np.random.rand(30)
 
-    for i in range(100):
+    train_iteration = 200
+
+    for i in range(train_iteration):
         for j in range(1000):
             filtered_values = lp_filter.process(values)
             network.set_target_firing_rate(target_values)
@@ -124,7 +126,6 @@ def train_target_prediction(network):
         print("target_u={}".format(network.layers[2].u_target))
         print("output_u={}".format(network.layers[2].u_p))
 
-    """
     network.clear_target()
 
     for i in range(100):
@@ -134,7 +135,7 @@ def train_target_prediction(network):
             network.update(dt)
         print("target_r={}".format(target_values))
         print("output_r={}".format(network.layers[2].get_p_activation()))
-    """
+
         
 def main(args):
     np.random.seed(seed=0)

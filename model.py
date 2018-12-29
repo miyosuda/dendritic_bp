@@ -158,13 +158,15 @@ class Layer(object):
         # TODO: v_p_a, v_p_b, v_i_b はテンポラリ変数にできそうだが、
         # update_weight()の中でも利用しているので、メンバ変数にしている. 要整理.
         
-        # Piramidal Apical
+        # Pyramidal Apical
         if self.layer_type == LAYER_TYPE_HIDDEN:
             self.v_p_a = self.w_pp_td.dot(activation(self.upper_layer.u_p)) + \
                          self.w_pi.dot(activation(self.u_i))
             # (pd_unit_size)
-        
-        # Piramidal Basal
+
+        # Bottomでは、v_p_aの更新をしていない.
+
+        # Pyramidal Basal
         if self.layer_type == LAYER_TYPE_HIDDEN or self.layer_type == LAYER_TYPE_TOP:
             self.v_p_b = self.lower_layer.w_pp_bu.dot(self.lower_layer.get_p_activation())
         
@@ -193,6 +195,8 @@ class Layer(object):
                     self.option.g_a * (self.v_p_a - self.u_p) + \
                     self.option.noise_delta * noise(len(self.u_p))
             self.u_p += d_u_p * dt
+        
+        # Bottomのu_pはここでは更新しない (外部から与えられるので)
 
         # SSTインターニューロンの電位の更新式
         if self.layer_type == LAYER_TYPE_HIDDEN:
@@ -223,13 +227,28 @@ class Layer(object):
             if self.train_w_pp_bu:
                 # Bottom Up結線のweight更新
                 upper_r_p = activation(self.upper_layer.u_p)
-                upper_v_p_b_hat = self.upper_layer.v_p_b * \
-                                  (self.option.g_b / \
-                                   (self.option.g_lk + self.option.g_b + self.option.g_a))
+
+                if self.upper_layer.layer_type == LAYER_TYPE_TOP:
+                    # 上の層がTopの場合はg_a=0としてattenulationを計算しないといけない.
+                    attenuation_rate = (self.option.g_b / \
+                                        (self.option.g_lk + self.option.g_b))
+                else:
+                    attenuation_rate = (self.option.g_b / \
+                                        (self.option.g_lk + self.option.g_b + self.option.g_a))
+                upper_v_p_b_hat = self.upper_layer.v_p_b * attenuation_rate
                 upper_r_p_b = activation(upper_v_p_b_hat)
                 d_w_pp_bu = self.calc_d_weight(self.option.eta_pp_bu,
                                                upper_r_p - upper_r_p_b, r_p)
                 self.w_pp_bu += d_w_pp_bu * dt
+                #..
+                """
+                # デバッグ情報保存
+                self.debug_upper_r_p = upper_r_p
+                self.debug_upper_v_p_b_hat = upper_v_p_b_hat
+                self.debug_upper_r_p_b = upper_r_p_b
+                self.debug_d_w_pp_bu = d_w_pp_bu
+                """
+                #..
         
             if self.train_w_pp_td:
                 # TopDownのPlasticyを使う場合

@@ -37,7 +37,7 @@ LAYER_TYPE_HIDDEN = 1
 LAYER_TYPE_TOP    = 2
 
 class Layer(object):
-    def __init__(self, pd_unit_size, layer_type, option):
+    def __init__(self, pd_unit_size, layer_type, option, force_self_prediction=False):
         self.pd_unit_size = pd_unit_size # 錐体細胞のユニット数
 
         self.layer_type = layer_type
@@ -46,6 +46,9 @@ class Layer(object):
         self.lower_layer = None
 
         self.set_option(option)
+
+        # 強制的にSelf Prediction状態にweightを初期かするかどうか
+        self.force_self_prediction = force_self_prediction
 
         # 各Weightを更新するかどうかフラグ
         self.train_w_pp_bu = True
@@ -87,29 +90,40 @@ class Layer(object):
         self.upper_layer = upper_layer
         upper_layer.lower_layer = self
 
-        if self.layer_type is not LAYER_TYPE_BOTTOM:
-            # 最下層レイヤーにはSST Interneuronが無い
-            self.sst_unit_size = upper_layer.pd_unit_size # 錐体細胞のユニット数
-            # SST inter-neuraon Soma potentials
-            self.u_i = np.zeros([self.sst_unit_size])
-
-            # PD -> SST
-            self.w_ip = np.random.uniform(-1, 1, size=(self.sst_unit_size,
-                                                       self.pd_unit_size))
-            # SST -> PD
-            self.w_pi = np.random.uniform(-1, 1, size=(self.pd_unit_size,
-                                                       self.sst_unit_size))
-
-            # Low pass filter
-            self.filter_d_w_ip = LowPassFilter(0.1, 30)
-            self.filter_d_w_pi = LowPassFilter(0.1, 30)
-            
         # K -> K+1
         self.w_pp_bu = np.random.uniform(-1, 1, size=(upper_layer.pd_unit_size,
                                                       self.pd_unit_size))
         # K+1 -> K
         self.w_pp_td = np.random.uniform(-1, 1, size=(self.pd_unit_size,
                                                       upper_layer.pd_unit_size))
+
+        if self.force_self_prediction:
+            # scalingする
+            self.w_pp_bu = self.w_pp_bu * 0.1
+
+        if self.layer_type is not LAYER_TYPE_BOTTOM:
+            # 最下層レイヤーにはSST Interneuronが無い
+            self.sst_unit_size = upper_layer.pd_unit_size # 錐体細胞のユニット数
+            # SST inter-neuraon Soma potentials
+            self.u_i = np.zeros([self.sst_unit_size])
+
+            if self.force_self_prediction:
+                # 強制的にSelf Prediction Stateにする場合
+                # PD -> SST
+                self.w_ip = self.w_pp_bu.copy()
+                # SST -> PD
+                self.w_pi = -self.w_pp_td
+            else:
+                # PD -> SST
+                self.w_ip = np.random.uniform(-1, 1, size=(self.sst_unit_size,
+                                                           self.pd_unit_size))
+                # SST -> PD
+                self.w_pi = np.random.uniform(-1, 1, size=(self.pd_unit_size,
+                                                           self.sst_unit_size))
+
+            # Low pass filter
+            self.filter_d_w_ip = LowPassFilter(0.1, 30)
+            self.filter_d_w_pi = LowPassFilter(0.1, 30)
 
     def get_p_activation(self):
         # Pyramidal CellのSomaの発火率を得る.
@@ -240,15 +254,6 @@ class Layer(object):
                 d_w_pp_bu = self.calc_d_weight(self.option.eta_pp_bu,
                                                upper_r_p - upper_r_p_b, r_p)
                 self.w_pp_bu += d_w_pp_bu * dt
-                #..
-                """
-                # デバッグ情報保存
-                self.debug_upper_r_p = upper_r_p
-                self.debug_upper_v_p_b_hat = upper_v_p_b_hat
-                self.debug_upper_r_p_b = upper_r_p_b
-                self.debug_d_w_pp_bu = d_w_pp_bu
-                """
-                #..
         
             if self.train_w_pp_td:
                 # TopDownのPlasticyを使う場合

@@ -12,10 +12,15 @@ from option import Option
 class LayerTest(unittest.TestCase):
     def test_update(self):
         option = Option()
+
+        force_self_prediction=True
         
-        layer0 = Layer(pd_unit_size=30, layer_type=LAYER_TYPE_BOTTOM, option=option)
-        layer1 = Layer(pd_unit_size=20, layer_type=LAYER_TYPE_HIDDEN, option=option)
-        layer2 = Layer(pd_unit_size=10, layer_type=LAYER_TYPE_TOP, option=option)
+        layer0 = Layer(pd_unit_size=30, layer_type=LAYER_TYPE_BOTTOM, option=option,
+                       force_self_prediction=force_self_prediction)
+        layer1 = Layer(pd_unit_size=20, layer_type=LAYER_TYPE_HIDDEN, option=option,
+                       force_self_prediction=force_self_prediction)
+        layer2 = Layer(pd_unit_size=10, layer_type=LAYER_TYPE_TOP, option=option,
+                       force_self_prediction=force_self_prediction)
         
         layer0.connect_to(layer1)
         layer1.connect_to(layer2)

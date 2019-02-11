@@ -44,5 +44,22 @@ class Option(object):
             option.eta_pp_bu = 0.0005
             option.eta_pp_td = 0.0011875 # 不使用
             option.eta_pi    = 0.0005
-            option.eta_ip    = 0.0011875 # OK
+            option.eta_ip    = 0.0011875
+        return option
+
+    def get_nonlinear_association_option(layer_index):
+        option = Option()
+
+        option.noise_delta = 0.3 # ノイズ増やす
+        
+        if layer_index == 0:
+            option.eta_pp_bu = 0.00011875
+            option.eta_pp_td = 0.0011875 # 不使用
+            option.eta_pi    = 0.0005
+            option.eta_ip    = 0.00002375
+        elif layer_index == 1:
+            option.eta_pp_bu = 0.00001
+            option.eta_pp_td = 0.0011875 # 不使用
+            option.eta_pi    = 0.0005
+            option.eta_ip    = 0.00002375
         return option

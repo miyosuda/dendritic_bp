@@ -199,8 +199,6 @@ class Layer(object):
                     self.option.g_b * (self.v_p_b - self.u_p) + \
                     i_p + \
                     self.option.noise_delta * noise(len(self.u_p))
-            # TODO: ここでi_pとノイズ以外の項により、u_pがu_targetに一致していかない原因を
-            # 探っている.
             self.u_p += d_u_p * dt
         elif self.layer_type == LAYER_TYPE_HIDDEN:
             # 中間層にはApicalがあるがi_pが無い

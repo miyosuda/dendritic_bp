@@ -219,7 +219,6 @@ def train_nonlinear_association(args, train_iteration=1000):
         print("error={}".format(np.mean(network.layers[1].v_p_a)))
         #print("target_r={}".format(target_values))
         #print("output_r={}".format(network.layers[2].get_p_activation()))
-
         print("target_u={}".format(network.layers[2].u_target))
         print("output_u={}".format(network.layers[2].u_p))
 
@@ -243,16 +242,16 @@ def main(args):
     
     #train_self_prediction(args)
     #train_target_prediction(args)
-    train_nonlinear_association(args)
+    train_nonlinear_association(args, train_iteration=args.iteration)
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument("--loading", type=strtobool, default="false")
     parser.add_argument("--saving", type=strtobool, default="false")
+    parser.add_argument("--iteration", type=int, default=1000)
     
     args = parser.parse_args()
 
     main(args)
 
-    target_network = TargetNetowork()

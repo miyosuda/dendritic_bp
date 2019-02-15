@@ -125,6 +125,13 @@ class Layer(object):
             self.filter_d_w_ip = LowPassFilter(0.1, 30)
             self.filter_d_w_pi = LowPassFilter(0.1, 30)
 
+        if self.layer_type is not LAYER_TYPE_TOP:
+            if self.force_self_prediction:
+                # Non-linear associiation modeではbottom up weightにもlow pass入れる
+                self.filter_d_w_pp_bu = LowPassFilter(0.1, 30)
+            else:
+                self.filter_d_w_pp_bu = None
+
     def get_p_activation(self):
         # Pyramidal CellのSomaの発火率を得る.
         if self.layer_type == LAYER_TYPE_BOTTOM:
@@ -251,6 +258,10 @@ class Layer(object):
                 upper_r_p_b = activation(upper_v_p_b_hat)
                 d_w_pp_bu = self.calc_d_weight(self.option.eta_pp_bu,
                                                upper_r_p - upper_r_p_b, r_p)
+                
+                if self.filter_d_w_pp_bu is not None:
+                    # bottom upにもLowPassかける場合
+                    d_w_pp_bu = self.filter_d_w_pp_bu.process(d_w_pp_bu)
                 self.w_pp_bu += d_w_pp_bu * dt
         
             if self.train_w_pp_td:

@@ -217,10 +217,11 @@ def train_nonlinear_association(args, train_iteration=1000):
             network.update(dt)
             
         print("error={}".format(np.mean(network.layers[1].v_p_a)))
-        #print("target_r={}".format(target_values))
-        #print("output_r={}".format(network.layers[2].get_p_activation()))
-        print("target_u={}".format(network.layers[2].u_target))
-        print("output_u={}".format(network.layers[2].u_p))
+        print("target_r={}".format(target_values))
+        print("output_r={}".format(network.layers[2].get_p_activation()))
+
+        #print("target_u={}".format(network.layers[2].u_target))
+        #print("output_u={}".format(network.layers[2].u_p))
 
     network.clear_target()
 
@@ -236,7 +237,7 @@ def train_nonlinear_association(args, train_iteration=1000):
     if args.saving:
         network.save(save_dir)
 
-        
+
 def main(args):
     np.random.seed(seed=0)
     
@@ -250,8 +251,8 @@ if __name__ == '__main__':
     parser.add_argument("--loading", type=strtobool, default="false")
     parser.add_argument("--saving", type=strtobool, default="false")
     parser.add_argument("--iteration", type=int, default=1000)
+    # 1000000
     
     args = parser.parse_args()
 
     main(args)
-

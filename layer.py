@@ -6,6 +6,15 @@ from __future__ import print_function
 import numpy as np
 import os
 
+LAYER_TYPE_BOTTOM = 0
+LAYER_TYPE_HIDDEN = 1
+LAYER_TYPE_TOP    = 2
+
+
+# force self prediction時のBottom Up WeightのScaling比率
+# (元論文では0.1を指定)
+BOTTOM_UP_WEIGHT_SCALING_FOR_FORCE_SELF_PREDICTION = 0.5
+
 
 def activation(x):
     """ Sigmoid activation function. """
@@ -33,11 +42,6 @@ class LowPassFilter(object):
         return self.last_value
 
     
-LAYER_TYPE_BOTTOM = 0
-LAYER_TYPE_HIDDEN = 1
-LAYER_TYPE_TOP    = 2
-
-
 class Layer(object):
     def __init__(self,
                  pd_unit_size,
@@ -105,7 +109,7 @@ class Layer(object):
 
         if self.force_self_prediction:
             # scalingする
-            self.w_pp_bu = self.w_pp_bu * 0.1
+            self.w_pp_bu = self.w_pp_bu * BOTTOM_UP_WEIGHT_SCALING_FOR_FORCE_SELF_PREDICTION
 
         if self.layer_type is not LAYER_TYPE_BOTTOM:
             # 最下層レイヤーにはSST Interneuronが無い
@@ -117,7 +121,7 @@ class Layer(object):
                 # 強制的にSelf Prediction Stateにする場合
                 # PD -> SST
                 self.w_ip = self.w_pp_bu.copy()
-                # SST -> PD (固定)
+                # SST -> PD (固定)?
                 self.w_pi = -self.w_pp_td
             else:
                 # PD -> SST

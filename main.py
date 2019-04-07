@@ -107,6 +107,13 @@ def train_nonlinear_association(args, train_iteration=1000):
     dt = 0.1
     lp_filter = LowPassFilter(dt, 3)
 
+    if args.saving:
+        network.save(save_dir)
+        target_network.save(save_dir)
+
+
+    save_interval = 500
+
     for i in range(train_iteration):
         input_values, target_values = target_network.get_training_pair()
         for j in range(1000):
@@ -124,6 +131,9 @@ def train_nonlinear_association(args, train_iteration=1000):
         rmse = calc_rmse(network.layers[2].get_p_activation(), target_values)
         print("{0}: rmse={1:.4f}".format(i, rmse))
 
+        if args.saving and ((i % save_interval) == (save_interval-1)):
+            network.save(save_dir)
+
     network.clear_target()
 
     for i in range(100):
@@ -137,8 +147,7 @@ def train_nonlinear_association(args, train_iteration=1000):
 
     if args.saving:
         network.save(save_dir)
-        target_network.save(save_dir)
-
+        
 
 def main(args):
     np.random.seed(seed=args.seed)
@@ -156,8 +165,10 @@ if __name__ == '__main__':
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--loading", type=strtobool, default="false")
     parser.add_argument("--saving", type=strtobool, default="true")
-    parser.add_argument("--iteration", type=int, default=1000) # 1000000
+    parser.add_argument("--iteration", type=int, default=100000) # 1000000
     parser.add_argument("--train_type", type=str, default="assoc")
+
+    # 1 itで、0.1秒, 30hで1080000 it
     
     args = parser.parse_args()
 

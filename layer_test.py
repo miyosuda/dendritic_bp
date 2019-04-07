@@ -6,7 +6,7 @@ from __future__ import print_function
 import numpy as np
 import unittest
 
-from model import Layer, LAYER_TYPE_BOTTOM, LAYER_TYPE_HIDDEN, LAYER_TYPE_TOP, LowPassFilter, activation, inv_activation
+from layer import Layer, LAYER_TYPE_BOTTOM, LAYER_TYPE_HIDDEN, LAYER_TYPE_TOP, LowPassFilter, activation, inv_activation
 from option import Option
 
 class LayerTest(unittest.TestCase):

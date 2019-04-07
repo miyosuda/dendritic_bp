@@ -11,6 +11,7 @@ from network import TargetNetwork, Network
 
 class TargetNetworkTest(unittest.TestCase):
     def test_init(self):
+        np.random.seed(seed=0)
         target_network = TargetNetwork()
 
         for i in range(10):
@@ -18,6 +19,16 @@ class TargetNetworkTest(unittest.TestCase):
             self.assertEqual(input_values.shape, (30, ))
             self.assertEqual(target_values.shape, (10, ))
 
+            print(target_values)
+
+    """
+    def test_save(self):
+        np.random.seed(seed=0)
+        target_network = TargetNetwork()
+
+        target_network.save("tmp")
+        target_network.load("tmp")
+    """
 
 
 if __name__ == '__main__':

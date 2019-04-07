@@ -54,12 +54,31 @@ class Option(object):
         
         if layer_index == 0:
             option.eta_pp_bu = 0.00011875
-            option.eta_pp_td = 0.0011875 # 不使用
-            option.eta_pi    = 0.0005
+            option.eta_pp_td = 0.0011875 # 不使用 (w固定)
+            option.eta_pi    = 0.0005    # 不使用 (w固定)
             option.eta_ip    = 0.00002375
         elif layer_index == 1:
             option.eta_pp_bu = 0.00001
-            option.eta_pp_td = 0.0011875 # 不使用
-            option.eta_pi    = 0.0005
+            option.eta_pp_td = 0.0011875 # 不使用 (w固定)
+            option.eta_pi    = 0.0005    # 不使用 (w固定)
             option.eta_ip    = 0.00002375
         return option
+
+    """
+    def get_nonlinear_association_option_experimental(layer_index):
+        option = Option()
+
+        option.noise_delta = 0.0
+        
+        if layer_index == 0:
+            option.eta_pp_bu = 0.00011875 * 10.0
+            option.eta_pp_td = 0.0011875 # 不使用 (w固定)
+            option.eta_pi    = 0.0005    # 不使用 (w固定)
+            option.eta_ip    = 0.00002375 * 10.0
+        elif layer_index == 1:
+            option.eta_pp_bu = 0.00001 * 10.0
+            option.eta_pp_td = 0.0011875 # 不使用 (w固定)
+            option.eta_pi    = 0.0005    # 不使用 (w固定)
+            option.eta_ip    = 0.00002375 * 10.0
+        return option    
+    """

@@ -27,6 +27,29 @@ class TargetNetwork(object):
         # Firing rateとして設定するので、最後はsigmoidをかける
         target_values = self.sigmoid(self.w1.dot(h0))
         return input_values, target_values
+
+    def save(self, dir_name):
+        if not os.path.exists(dir_name):
+            os.makedirs(dir_name)
+
+        file_path = os.path.join(dir_name, "target")
+        np.savez_compressed(file_path,
+                            w0=self.w0,
+                            w1=self.w1)
+
+        print("target saved: {}".format(dir_name))
+
+    def load(self, dir_name):
+        file_path = os.path.join(dir_name, "target.npz")
+        if not os.path.exists(file_path):
+            print("saved file not found")
+            return
+        
+        data = np.load(file_path)
+        self.w0 = data["w0"]
+        self.w1 = data["w1"]
+        print("target loaded: {}".format(dir_name))
+    
         
 
 class Network(object):
@@ -121,4 +144,3 @@ class Network(object):
             self.layers[i].load(file_path)
 
         print("loaded: {}".format(dir_name))
-

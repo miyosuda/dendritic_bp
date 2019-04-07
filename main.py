@@ -100,6 +100,7 @@ def train_nonlinear_association(args, train_iteration=1000):
     
     if args.loading:
         network.load(save_dir)
+        target_network.load(save_dir)
     
     network.set_nonlinear_association_mode()
     
@@ -117,7 +118,6 @@ def train_nonlinear_association(args, train_iteration=1000):
         #print("error={}".format(np.mean(network.layers[1].v_p_a)))
         #print("target_r={}".format(target_values))
         #print("output_r={}".format(network.layers[2].get_p_activation()))
-
         #print("target_u={}".format(network.layers[2].u_target))
         #print("output_u={}".format(network.layers[2].u_p))
 
@@ -137,10 +137,11 @@ def train_nonlinear_association(args, train_iteration=1000):
 
     if args.saving:
         network.save(save_dir)
+        target_network.save(save_dir)
 
 
 def main(args):
-    np.random.seed(seed=0)
+    np.random.seed(seed=args.seed)
 
     if args.train_type == "self":
         train_self_prediction(args)
@@ -152,11 +153,11 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
+    parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--loading", type=strtobool, default="false")
     parser.add_argument("--saving", type=strtobool, default="true")
-    parser.add_argument("--iteration", type=int, default=1000)
+    parser.add_argument("--iteration", type=int, default=1000) # 1000000
     parser.add_argument("--train_type", type=str, default="assoc")
-    # 1000000
     
     args = parser.parse_args()
 

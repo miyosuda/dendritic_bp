@@ -129,7 +129,9 @@ def train_nonlinear_association(args, train_iteration=1000):
         #print("output_u={}".format(network.layers[2].u_p))
 
         rmse = calc_rmse(network.layers[2].get_p_activation(), target_values)
-        print("{0}: rmse={1:.4f}".format(i, rmse))
+
+        if args.verbose:
+            print("{0}: rmse={1:.4f}".format(i, rmse))
 
         if args.saving and ((i % save_interval) == (save_interval-1)):
             network.save(save_dir)
@@ -142,8 +144,10 @@ def train_nonlinear_association(args, train_iteration=1000):
             filtered_input_values = lp_filter.process(input_values)
             network.set_input_firing_rate(filtered_input_values)
             network.update(dt)
-        print("target_r={}".format(target_values))
-        print("output_r={}".format(network.layers[2].get_p_activation()))
+
+        if args.verbose:
+            print("target_r={}".format(target_values))
+            print("output_r={}".format(network.layers[2].get_p_activation()))
 
     if args.saving:
         network.save(save_dir)
@@ -167,9 +171,9 @@ if __name__ == '__main__':
     parser.add_argument("--saving", type=strtobool, default="true")
     parser.add_argument("--iteration", type=int, default=1000000) # 1000000
     parser.add_argument("--train_type", type=str, default="assoc")
-
-    # 1 itで、0.1秒, 30hで1080000 it
+    parser.add_argument("--verbose", type=strtobool, default="false")
     
+    # 1 itで、0.1秒, 30hで1080000 it
     args = parser.parse_args()
 
     main(args)

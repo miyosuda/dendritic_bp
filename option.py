@@ -50,7 +50,7 @@ class Option(object):
     def get_nonlinear_association_option(layer_index):
         option = Option()
 
-        #option.noise_delta = 0.3 # ノイズ増やす
+        option.noise_delta = 0.3 # ノイズ増やす
         
         if layer_index == 0:
             option.eta_pp_bu = 0.00011875

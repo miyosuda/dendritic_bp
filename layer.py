@@ -13,7 +13,7 @@ LAYER_TYPE_TOP    = 2
 
 # force self prediction時のBottom Up WeightのScaling比率
 # (元論文では0.1を指定)
-BOTTOM_UP_WEIGHT_SCALING_FOR_FORCE_SELF_PREDICTION = 0.5
+BOTTOM_UP_WEIGHT_SCALING_FOR_FORCE_SELF_PREDICTION = 1.0
 
 
 def activation(x):

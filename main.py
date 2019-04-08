@@ -165,7 +165,7 @@ if __name__ == '__main__':
     parser.add_argument("--seed", type=int, default=1)
     parser.add_argument("--loading", type=strtobool, default="false")
     parser.add_argument("--saving", type=strtobool, default="true")
-    parser.add_argument("--iteration", type=int, default=100000) # 1000000
+    parser.add_argument("--iteration", type=int, default=1000000) # 1000000
     parser.add_argument("--train_type", type=str, default="assoc")
 
     # 1 itで、0.1秒, 30hで1080000 it
